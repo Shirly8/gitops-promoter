@@ -16,8 +16,8 @@ const HealthSummary: React.FC<HealthSummaryProps> = ({ checks, title, status, he
     shouldDisplay: checks && checks.length > 0
   };
 
-  // Auto-expand if less than 3 checks
-  const shouldAutoExpand = totalCount < 3;
+  // Auto-expand if less than 4 checks
+  const shouldAutoExpand = totalCount < 4;
   const [isExpanded, setIsExpanded] = useState(shouldAutoExpand);
   
   if (!shouldDisplay) {

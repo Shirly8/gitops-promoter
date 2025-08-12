@@ -1,4 +1,4 @@
-import { FaRegFileAlt } from 'react-icons/fa';
+import { GoArchive } from "react-icons/go";
 import { BsBraces } from 'react-icons/bs';
 import { GoGitPullRequest } from 'react-icons/go';
 import { StatusIcon, StatusType } from './StatusIcon';
@@ -42,7 +42,7 @@ const CommitInfo: React.FC<CommitInfoProps> = ({
 }) => {
   const getIcon = (iconType: 'file' | 'code') => {
     if (iconType === 'code') return <BsBraces className="commit-icon" />;
-    return <FaRegFileAlt className="commit-icon" />;
+    return <GoArchive className="commit-icon" />;
   };
 
   const getStatusClass = (type: 'deployment' | 'code') => {
@@ -164,7 +164,7 @@ const CommitInfo: React.FC<CommitInfoProps> = ({
               href={prUrl} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="pr-indicator"
+              className={`pr-indicator ${isActive ? 'active-pr' : ''}`}
               title={`View PR #${prNumber}`}
             >
               <GoGitPullRequest className="pr-icon" />

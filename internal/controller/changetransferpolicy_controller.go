@@ -218,6 +218,10 @@ func (r *ChangeTransferPolicyReconciler) calculateHistory(ctx context.Context, c
 			h.PullRequest.ID = pullRequestID
 		} else {
 			logger.V(4).Info("No PullRequest-ID found in trailers for active SHA", "sha", sha)
+			// Only use current PR if it's merged AND this is the most recent commit
+			if len(history) == 0 && ctp.Status.PullRequest != nil && ctp.Status.PullRequest.State == "merged" {
+				h.PullRequest.ID = ctp.Status.PullRequest.ID
+			}
 		}
 
 		if pullRequestUrl, ok := activeTrailers["PullRequest-Url"]; ok && pullRequestUrl != "" {
@@ -702,6 +706,15 @@ func (r *ChangeTransferPolicyReconciler) creatOrUpdatePullRequest(ctx context.Co
 		gvk := promoterv1alpha1.GroupVersion.WithKind(kind)
 		controllerRef := metav1.NewControllerRef(ctp, gvk)
 
+		// Create first PR with trailers
+		commitTrailers := trailers{}
+		commitTrailers["PullRequest-SourceBranch"] = ctp.Spec.ProposedBranch
+		commitTrailers["PullRequest-TargetBranch"] = ctp.Spec.ActiveBranch
+		commitTrailers["Sha-Hydrated-Active"] = ctp.Status.Active.Hydrated.Sha
+		commitTrailers["Sha-Hydrated-Proposed"] = ctp.Status.Proposed.Hydrated.Sha
+		commitTrailers["Sha-Dry-Active"] = ctp.Status.Active.Dry.Sha
+		commitTrailers["Sha-Dry-Proposed"] = ctp.Status.Proposed.Dry.Sha
+
 		pr = promoterv1alpha1.PullRequest{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            prName,
@@ -719,7 +732,7 @@ func (r *ChangeTransferPolicyReconciler) creatOrUpdatePullRequest(ctx context.Co
 				TargetBranch:        ctp.Spec.ActiveBranch,
 				SourceBranch:        ctp.Spec.ProposedBranch,
 				Description:         description,
-				MergeCommitMessage:  fmt.Sprintf("%s\n\n%s", title, description),
+				MergeCommitMessage:  fmt.Sprintf("%s\n\n%s\n\n%s", title, description, commitTrailers),
 				State:               "open",
 			},
 		}
@@ -733,6 +746,7 @@ func (r *ChangeTransferPolicyReconciler) creatOrUpdatePullRequest(ctx context.Co
 	}
 
 	commitTrailers := trailers{}
+	// Always add PR trailers to merge commit message, even for development
 	commitTrailers["PullRequest-ID"] = pr.Status.ID
 	commitTrailers["PullRequest-SourceBranch"] = pr.Spec.SourceBranch
 	commitTrailers["PullRequest-TargetBranch"] = pr.Spec.TargetBranch

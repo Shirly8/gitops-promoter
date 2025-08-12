@@ -4,7 +4,8 @@ import { namespaceStore } from '../stores/NamespaceStore'
 import { PromotionStrategyStore } from '../stores/PromotionStrategyStore';
 import BackButton from '../components/BackButton';
 import HeaderBar from '@lib/components/HeaderBar';
-import PromotionStrategyDetailsView from '@lib/components/PromotionStrategyDetailsView';
+import PromotionStrategyDetailsView from '../components/PromotionStrategyDetailsView';
+import { useSampleData } from '../hooks/useSampleData';
 import type { PromotionStrategy } from '@shared/utils/PSData';
 
 interface NamespaceStore {
@@ -27,25 +28,8 @@ const PromotionStrategyPage: React.FC<PromotionStrategyPageProps> = ({ namespace
   const currentNamespace = namespaceStore((s: NamespaceStore) => s.namespace);
   const setNamespace = namespaceStore((s: NamespaceStore) => s.setNamespace);
 
-  const { items, fetchItems, subscribe, unsubscribe } = PromotionStrategyStore();
-
-  // Find the selected strategy
-  const selectedStrategy = items.find(
-    (ps: PromotionStrategy) => ps.metadata?.name === strategyName
-  );
-
-  useEffect(() => {
-    if (!namespace) return;
-    if (namespace !== currentNamespace) {
-      setNamespace(namespace);
-    }
-    // Only fetch if items are empty or selectedStrategy is not found
-    if (!items || items.length === 0 || !selectedStrategy) {
-      fetchItems(namespace);
-    }
-    subscribe(namespace);
-    return () => unsubscribe();
-  }, [namespace, currentNamespace, setNamespace, fetchItems, subscribe, unsubscribe, items, selectedStrategy]);
+  // Use sample data instead of store
+  const { promotionStrategy, currentPhase, step, handleHistoryClick } = useSampleData();
 
   //Navigation:
   const navigate = useNavigate();
@@ -55,7 +39,6 @@ const PromotionStrategyPage: React.FC<PromotionStrategyPageProps> = ({ namespace
     navigate('/promotion-strategies');
   };
 
-  
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', position: 'relative', width: '100%', backgroundColor: 'white'}}>
@@ -63,21 +46,16 @@ const PromotionStrategyPage: React.FC<PromotionStrategyPageProps> = ({ namespace
           <BackButton onClick={handleBack} />
         </div>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', marginRight: '100px'}}>
-          <HeaderBar name={strategyName || ""} />
+          <HeaderBar name={strategyName || "Sample Promotion Strategy"} />
         </div>
       </div>
 
-      {items.length === 0 ? (
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>Loading strategies...</div>
-      ) : selectedStrategy ? (
-        <div style = {{marginTop: '40px'}}>
+      <div style={{ marginTop: '40px' }}>
         <PromotionStrategyDetailsView
-          strategy={selectedStrategy}
+          strategy={promotionStrategy}
+          onHistoryItemClick={handleHistoryClick}
         />
-        </div>
-      ) : (
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>No strategy found for {strategyName}</div>
-      )}
+      </div>
     </>
   );
 };
